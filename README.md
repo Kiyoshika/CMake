@@ -4,8 +4,15 @@ This is a simple matrix / linear algebra library I'm writing in pure C for my ow
 ## Benchmarks
 I will soon be working on improving the speed of matrix multiplication. Here are some current benchmarks:
 
-* (512, 512) x (512, 512)     - under 1 second (x86 Release mode)
-* (1024, 1024) x (1024, 1024) - under 1 seconds (x86 Release mode)
-* (2048, 2048) x (2048, 2048) - around 13 seconds (x86 Release mode)
+Specs:
+* Processor: Intel i7 9th gen
+* Threads: 1
+* Optimization: O2
+* Compiler: gcc
+
+* (512, 512) x (512, 512)     - under 1 second
+* (1024, 1024) x (1024, 1024) - under 1 second
+* (2048, 2048) x (2048, 2048) - around 13 seconds
 * (4096, 4096) x (4096, 4096) - around 100 seconds
-* (10000, 10) x (10, 10000)   - around 3 seconds (x86 Release mode)
+* (10000, 10) x (10, 10000)   - 200+ seconds
+* (10, 10000) x (10000, 10)   - under 1 second
