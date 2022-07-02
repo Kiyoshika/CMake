@@ -78,6 +78,68 @@ void vec_apply(Vector** vec, float (*apply_func)(float x, float* argv), float* a
 		(*vec)->data[i] = apply_func((*vec)->data[i], argv);
 }
 
+void vec_add_s(Vector** vec, const float value)
+{
+	for (size_t i = 0; i < (*vec)->n_elem; ++i)
+		(*vec)->data[i] += value;
+}
+
+void vec_subtract_s(Vector** vec, const float value)
+{
+	for (size_t i = 0; i < (*vec)->n_elem; ++i)
+		(*vec)->data[i] -= value;
+}
+
+void vec_multiply_s(Vector** vec, const float value)
+{
+	for (size_t i = 0; i < (*vec)->n_elem; ++i)
+		(*vec)->data[i] *= value;
+}
+
+void vec_divide_s(Vector** vec, const float value)
+{
+	for (size_t i = 0; i < (*vec)->n_elem; ++i)
+		(*vec)->data[i] /= value;
+}
+
+void vec_add_e(Vector** target, const Vector* vec)
+{
+	for (size_t i = 0; i < (*target)->n_elem; ++i)
+		(*target)->data[i] += vec->data[i];
+}
+
+void vec_subtract_e(Vector** target, const Vector* vec)
+{
+	for (size_t i = 0; i < (*target)->n_elem; ++i)
+		(*target)->data[i] -= vec->data[i];
+}
+
+void vec_multiply_e(Vector** target, const Vector* vec)
+{
+	for (size_t i = 0; i < (*target)->n_elem; ++i)
+		(*target)->data[i] *= vec->data[i];
+}
+
+void vec_divide_e(Vector** target, const Vector* vec)
+{
+	for (size_t i = 0; i < (*target)->n_elem; ++i)
+		(*target)->data[i] /= vec->data[i];
+}
+
+float vec_sum(const Vector* vec)
+{
+	float result = 0.0f;
+	for (size_t i = 0; i < vec->n_elem; ++i)
+		result += vec->data[i];
+	
+	return result;
+}
+
+float vec_mean(const Vector* vec)
+{
+	return vec_sum(vec) / (float)vec->n_elem;
+}
+
 void vec_free(Vector** vec)
 {
 	free((*vec)->data);

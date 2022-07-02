@@ -39,6 +39,36 @@ void vec_fill(Vector** vec, const float value);
 // apply function to each element in vector using function pointer. function pointer uses argv if user needs to pass any additional parameters to the apply function, otherwise can pass NULL. value returned from function will be set in the vector's cell.
 void vec_apply(Vector** vec, float (*apply_func)(float x, float* argv), float* argv);
 
+// add scalar value element-wise to vector
+void vec_add_s(Vector** vec, const float value);
+
+// subtract scalar value element-wise from vector
+void vec_subtract_s(Vector** vec, const float value);
+
+// multiply scalar value element-wise to vector
+void vec_multiply_s(Vector** vec, const float value);
+
+// divide scalar value element-wise to vector
+void vec_divide_s(Vector** vec, const float value);
+
+// add two vectors target - vec element-wise - target is modified inplace
+void vec_add_e(Vector** target, const Vector* vec);
+
+// substract two vectors target - vec element-wise - target is modified inplace
+void vec_subtract_e(Vector** target, const Vector* vec);
+
+// multiply two vectors target * vec element-wise - target is modified inplace
+void vec_multiply_e(Vector** target, const Vector* vec);
+
+// divide two vectors target / vec element-wise - target is modified inplace
+void vec_divide_e(Vector** target, const Vector* vec);
+
+// sum all elements in a vector
+float vec_sum(const Vector* vec);
+
+// get mean of all elements in a vector
+float vec_mean(const Vector* vec);
+
 // free memory allocated by vector
 void vec_free(Vector** vec);
 

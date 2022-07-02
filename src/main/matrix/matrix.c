@@ -83,8 +83,12 @@ Vector* mat_get_row(const Matrix* mat, const size_t row)
 
 void mat_get_row_inplace(const Matrix* mat, const size_t row, Vector** vec)
 {
-	for (size_t c = 0; c < mat->n_columns; ++c)
-		(*vec)->data[c] = mat->data[compute_offset(row, c, mat->n_columns)];
+	/*for (size_t c = 0; c < mat->n_columns; ++c)
+		(*vec)->data[c] = mat->data[compute_offset(row, c, mat->n_columns)];*/
+
+	// an optimization for copying contiguous data from a matrix
+	// from experimentation, this has improved performance a decent amount
+	memcpy((*vec)->data, &mat->data[row * mat->n_columns], mat->n_columns * sizeof(float));
 }
 
 Vector* mat_get_column(const Matrix* mat, const size_t column)
@@ -138,66 +142,67 @@ void mat_print(const Matrix* mat)
 	}
 }
 
+static Matrix* __naive_multiplication(const Matrix* mat1, const Matrix* mat2)
+{
+	Matrix* result = NULL;
+	mat_init(&result, mat1->n_rows, mat2->n_columns);
+
+	Vector* row_vec = NULL;
+	vec_init(&row_vec, mat1->n_rows);
+
+	Vector* col_vec = NULL;
+	vec_init(&col_vec, mat2->n_columns);
+
+	for (size_t r = 0; r < result->n_rows; ++r)
+	{
+		for (size_t c = 0; c < result->n_columns; ++c)
+		{
+			mat_get_row_inplace(mat1, r, &row_vec);
+			mat_get_column_inplace(mat2, c, &col_vec);
+			mat_set(&result, r, c, vec_dot(row_vec, col_vec));
+		}
+	}
+
+	vec_free(&row_vec);
+	vec_free(&col_vec);
+
+	return result;
+}
+
+static Matrix* __transpose_trick(const Matrix* mat1, const Matrix* mat2)
+{
+	Matrix* result = NULL;
+	mat_init(&result, mat1->n_rows, mat2->n_columns);
+
+	Matrix* mat2_tpose = mat_transpose(mat2);
+
+	Vector* row_vec = NULL;
+	vec_init(&row_vec, mat1->n_rows);
+
+	Vector* col_vec = NULL;
+	vec_init(&col_vec, mat2_tpose->n_rows); // due to transpose, the size will be similar to row_vec
+
+	for (size_t r = 0; r < result->n_rows; ++r)
+	{
+		for (size_t c = 0; c < result->n_columns; ++c)
+		{
+			mat_get_row_inplace(mat1, r, &row_vec);
+			mat_get_row_inplace(mat2_tpose, c, &col_vec);
+			mat_set(&result, r, c, mat_at(result, r, c) + vec_dot(row_vec, col_vec));
+		}
+	}
+
+	mat_free(&mat2_tpose);
+
+	return result;
+}
+
 Matrix* mat_multiply(const Matrix* mat1, const Matrix* mat2)
 {
 	if (mat1->n_columns != mat2->n_rows)
 		util_error("mat1's column size must match mat2's row size when multiplying matrices.");
 
-	// (n, k) * (k, t) = (n, t)
-	Matrix* result = NULL;
-	mat_init(&result, mat1->n_rows, mat2->n_columns);
-
-	Vector* row_vec = NULL;
-	vec_init(&row_vec, mat1->n_columns);
-
-	Vector* column_vec = NULL;
-	vec_init(&column_vec, mat2->n_rows);
-
-	for (size_t r = 0; r < mat1->n_rows; ++r)
-	{
-		for (size_t c = 0; c < mat2->n_columns; ++c)
-		{
-			mat_get_row_inplace(mat1, r, &row_vec);
-			mat_get_column_inplace(mat2, c, &column_vec);
-			result->data[compute_offset(r, c, result->n_columns)] = vec_dot(row_vec, column_vec);
-		}
-	}
-
-	vec_free(&row_vec);
-	vec_free(&column_vec);
-
-	return result;
-}
-
-Matrix* mat_multiply_exp(const Matrix* mat1, const Matrix* mat2)
-{
-	if (mat1->n_columns != mat2->n_rows)
-		util_error("mat1's column size must match mat2's row size when multiplying matrices.");
-
-	// (n, k) * (k, t) = (n, t)
-	Matrix* result = NULL;
-	mat_init(&result, mat1->n_rows, mat2->n_columns);
-
-	Vector* row_vec = NULL;
-	vec_init(&row_vec, mat1->n_columns);
-
-	Vector* column_vec = NULL;
-	vec_init(&column_vec, mat2->n_rows);
-
-	for (size_t r = 0; r < mat1->n_columns; ++r)
-	{
-		for (size_t c = 0; c < mat2->n_rows; ++c)
-		{
-			mat_get_row_inplace(mat1, r, &row_vec);
-			mat_get_column_inplace(mat2, c, &column_vec);
-			result->data[compute_offset(r, c, result->n_columns)] = vec_dot(row_vec, column_vec);
-		}
-	}
-
-	vec_free(&row_vec);
-	vec_free(&column_vec);
-
-	return result;
+	return __transpose_trick(mat1, mat2);
 }
 
 void mat_multiply_inplace(const Matrix* mat1, const Matrix* mat2, Matrix** target)
@@ -229,6 +234,177 @@ void mat_apply(Matrix** mat, float (*apply_func)(float x, float* argv), float* a
 {
 	for (size_t i = 0; i < (*mat)->n_rows * (*mat)->n_columns; ++i)
 		(*mat)->data[i] = apply_func((*mat)->data[i], argv);
+}
+
+void mat_add_s(Matrix** mat, const float value)
+{
+	for (size_t i = 0; i < (*mat)->n_columns * (*mat)->n_rows; ++i)
+		(*mat)->data[i] += value;
+}
+
+void mat_substract_s(Matrix** mat, const float value)
+{
+	for (size_t i = 0; i < (*mat)->n_columns * (*mat)->n_rows; ++i)
+		(*mat)->data[i] -= value;
+}
+
+void mat_multiply_s(Matrix** mat, const float value)
+{
+	for (size_t i = 0; i < (*mat)->n_columns * (*mat)->n_rows; ++i)
+		(*mat)->data[i] *= value;
+}
+
+void mat_divide_s(Matrix** mat, const float value)
+{
+	for (size_t i = 0; i < (*mat)->n_columns * (*mat)->n_rows; ++i)
+		(*mat)->data[i] /= value;
+}
+
+void mat_add_e(Matrix** target, const Matrix* mat)
+{
+	if (mat->n_rows != (*target)->n_rows && mat->n_columns != (*target)->n_columns)
+		util_error("Matrix dimensions must match exactly when trying to perform element-wise operations.");
+
+	for (size_t i = 0; i < mat->n_rows * mat->n_columns; ++i)
+		(*target)->data[i] += mat->data[i];
+}
+
+void mat_subtract_e(Matrix** target, const Matrix* mat)
+{
+	if (mat->n_rows != (*target)->n_rows && mat->n_columns != (*target)->n_columns)
+		util_error("Matrix dimensions must match exactly when trying to perform element-wise operations.");
+
+	for (size_t i = 0; i < mat->n_rows * mat->n_columns; ++i)
+		(*target)->data[i] -= mat->data[i];
+}
+
+void mat_multiply_e(Matrix** target, const Matrix* mat)
+{
+	if (mat->n_rows != (*target)->n_rows && mat->n_columns != (*target)->n_columns)
+		util_error("Matrix dimensions must match exactly when trying to perform element-wise operations.");
+
+	for (size_t i = 0; i < mat->n_rows * mat->n_columns; ++i)
+		(*target)->data[i] *= mat->data[i];
+}
+
+void mat_divide_e(Matrix** target, const Matrix* mat)
+{
+	if (mat->n_rows != (*target)->n_rows && mat->n_columns != (*target)->n_columns)
+		util_error("Matrix dimensions must match exactly when trying to perform element-wise operations.");
+
+	for (size_t i = 0; i < mat->n_rows * mat->n_columns; ++i)
+		(*target)->data[i] /= mat->data[i];
+}
+
+Matrix* mat_copy(const Matrix* mat)
+{
+	Matrix* mcpy = NULL;
+	mat_init(&mcpy, mat->n_rows, mat->n_columns);
+
+	for (size_t i = 0; i < mat->n_rows * mat->n_columns; ++i)
+		mcpy->data[i] = mat->data[i];
+
+	return mcpy;
+}
+
+Matrix* mat_subset(const Matrix* mat, const size_t r_lower, const size_t r_upper, const size_t c_lower, const size_t c_upper)
+{
+	Matrix* subset = NULL;
+	mat_init(&subset, r_upper - r_lower + 1, c_upper - c_lower + 1);
+
+	for (size_t r = r_lower; r <= r_upper; ++r)
+		for (size_t c = c_lower; c <= c_upper; ++c)
+			mat_set(&subset, r - r_lower, c - c_lower, mat_at(mat, r, c));
+	
+	return subset;
+}
+
+float mat_sum(const Matrix* mat)
+{
+	float result = 0.0f;
+	for (size_t i = 0; i < mat->n_rows * mat->n_columns; ++i)
+		result += mat->data[i];
+
+	return result;
+}
+
+float mat_mean(const Matrix* mat)
+{
+	return mat_sum(mat) / (float)(mat->n_rows * mat->n_columns);
+}
+
+static bool check_used_index(size_t* used_indices, size_t n_indices, size_t search_index)
+{
+	for (size_t i = 0; i < n_indices; ++i)
+		if (used_indices[i] == search_index)
+			return true;
+
+	return false;
+}
+
+Matrix* mat_sample(const Matrix* mat, const size_t n_samples, bool with_replacement, size_t* sample_indices)
+{
+	if (!with_replacement && n_samples > mat->n_rows)
+		util_error("Cannot sample without replacement with a size larger than the matrix's row count.");
+
+	Matrix* sample = NULL;
+	mat_init(&sample, n_samples, mat->n_columns);
+
+	// would be better to insert the elements sorted and binary search, but for now
+	// I will use a naive linear implementation
+	size_t* used_indices = calloc(n_samples, sizeof(size_t));
+	size_t n_used_indices = 0;
+
+	srand(time(NULL));
+
+	while (n_used_indices < n_samples)
+	{
+		size_t rand_idx = (size_t)util_rand_between(0.0f, (float)mat->n_rows);
+		if (n_used_indices > 0 && !with_replacement && !check_used_index(used_indices, n_used_indices, rand_idx))
+		{
+			for (size_t c = 0; c < sample->n_columns; ++c)
+				mat_set(&sample, n_used_indices, c, mat_at(mat, rand_idx, c));
+
+			used_indices[n_used_indices] = rand_idx;
+
+			if (sample_indices)
+				sample_indices[n_used_indices] = rand_idx;
+
+			n_used_indices++;
+		}
+		// I break out this condition separately as used_indices is filled with zeroes, 
+		// so check_used_index would always return true on 0, so technically it's possible
+		// that we would never sample the very first row
+		else if (n_used_indices == 0 && !with_replacement)
+		{
+			for (size_t c = 0; c < sample->n_columns; ++c)
+				mat_set(&sample, n_used_indices, c, mat_at(mat, rand_idx, c));
+
+			used_indices[n_used_indices] = rand_idx;
+
+			if (sample_indices)
+				sample_indices[n_used_indices] = rand_idx;
+
+			n_used_indices++;
+
+		}
+		else if (with_replacement)
+		{
+			for (size_t c = 0; c < sample->n_columns; ++c)
+				mat_set(&sample, n_used_indices, c, mat_at(mat, rand_idx, c));
+
+			used_indices[n_used_indices] = rand_idx;
+
+			if (sample_indices)
+				sample_indices[n_used_indices] = rand_idx;
+
+			n_used_indices++;
+		}
+	}
+
+	free(used_indices);
+
+	return sample;
 }
 
 void mat_free(Matrix** mat)
