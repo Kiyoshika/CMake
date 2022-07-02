@@ -10,6 +10,7 @@ Specs:
 * Optimization: O2
 * Compiler: gcc
 
+Results:
 * (512, 512) x (512, 512)     - under 1 second
 * (1024, 1024) x (1024, 1024) - under 1 second
 * (2048, 2048) x (2048, 2048) - around 13 seconds
