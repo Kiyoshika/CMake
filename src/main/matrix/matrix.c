@@ -197,6 +197,29 @@ static Matrix* __transpose_trick(const Matrix* mat1, const Matrix* mat2)
 	return result;
 }
 
+static void __transpose_trick_inplace(const Matrix* mat1, const Matrix* mat2, Matrix** target)
+{
+	Matrix* mat2_tpose = mat_transpose(mat2);
+
+	Vector* row_vec = NULL;
+	vec_init(&row_vec, mat1->n_rows);
+
+	Vector* col_vec = NULL;
+	vec_init(&col_vec, mat2_tpose->n_rows); // due to transpose, the size will be similar to row_vec
+
+	for (size_t r = 0; r < (*target)->n_rows; ++r)
+	{
+		for (size_t c = 0; c < (*target)->n_columns; ++c)
+		{
+			mat_get_row_inplace(mat1, r, &row_vec);
+			mat_get_row_inplace(mat2_tpose, c, &col_vec);
+			mat_set(target, r, c, mat_at(*target, r, c) + vec_dot(row_vec, col_vec));
+		}
+	}
+
+	mat_free(&mat2_tpose);
+}
+
 Matrix* mat_multiply(const Matrix* mat1, const Matrix* mat2)
 {
 	if (mat1->n_columns != mat2->n_rows)
@@ -210,24 +233,7 @@ void mat_multiply_inplace(const Matrix* mat1, const Matrix* mat2, Matrix** targe
 	if (mat1->n_columns != mat2->n_rows)
 		util_error("mat1's column size must match mat2's row size when multiplying matrices.");
 
-	Vector* row_vec = NULL;
-	vec_init(&row_vec, mat1->n_columns);
-
-	Vector* column_vec = NULL;
-	vec_init(&column_vec, mat2->n_rows);
-
-	for (size_t r = 0; r < mat1->n_rows; ++r)
-	{
-		for (size_t c = 0; c < mat2->n_columns; ++c)
-		{
-			mat_get_row_inplace(mat1, r, &row_vec);
-			mat_get_column_inplace(mat2, c, &column_vec);
-			(*target)->data[compute_offset(r, c, (*target)->n_columns)] = vec_dot(row_vec, column_vec);
-		}
-	}
-
-	vec_free(&row_vec);
-	vec_free(&column_vec);
+	__transpose_trick_inplace(mat1, mat2, target);
 }
 
 void mat_apply(Matrix** mat, float (*apply_func)(float x, float* argv), float* argv)
