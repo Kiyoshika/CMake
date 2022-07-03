@@ -10,6 +10,3 @@ target_link_libraries(vector util)
 add_library(matrix matrix/matrix.c)
 target_include_directories(matrix PUBLIC ${ROOT_INCLUDE}/matrix)
 target_link_libraries(matrix util vector)
-
-add_executable(driver driver.c)
-target_link_libraries(driver vector matrix)
