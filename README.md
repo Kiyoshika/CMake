@@ -1,6 +1,8 @@
 # C Matrix
 This is a simple matrix / linear algebra library I'm writing in pure C for my own learning experience. This is far from optimal to use in speed-critical settings as some of these implementations are pretty naive (e.g., matrix multiplication)
 
+This includes `Matrix.h` and `Vector.h`. Keep in mind the `Vector` implementation is statically-sized and not your typical "dynamic" vector.
+
 # Structure
 This is a wrapper around a `float*` where offsets are computed to "mimic" a 2D array. 
 
@@ -21,6 +23,8 @@ This will create a static library `libmatrix.a` which you can include into your 
 # Linking to Other Projects
 The easiest way is to probably just `git submodule add https://github.com/Kiyoshika/CMatrix` into your project and in your CMake file
 include a `add_subdirectory(path/to/CMatrix)` which will include CMatrix as part of your build.
+
+Then in your pieces of code that depend on it, you can use `target_link_libraries([your target] matrix)`
 
 If you don't use CMake, you can build from source (above section) and manually link the static library.
 
