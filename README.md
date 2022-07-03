@@ -11,6 +11,13 @@ The basic matrix operations are supported such as transpose, multiply, element-w
 
 Some functions have a "copy" variant (new Matrix created) or an "inplace" variant where no new Matrix is allocated. This is mainly for situations where you are doing a lot of repeated operations (e.g. multiplication or transpose) and want to avoid heap fragmentation from thousands of allocations.
 
+# Parallelization
+This library optionally uses OpenMP if you want to speed up matrix multiplication.
+
+If you want to use multiple threads, use `cmake -DUSE_PARALLEL=ON ..`
+
+NOTE: if you are on Windows using MinGW, you must use MinGW's installer to install `mingw-pthreads-w32-...` libraries.
+
 # Building from Source
 * `git clone https://github.com/Kiyoshika/CMatrix`
 * `cd CMatrix`
@@ -35,14 +42,22 @@ In the meantime, below are some benchmarks for `mat_multiply`
 
 Specs:
 * Processor: Intel i7 9th gen
-* Threads: 1
 * Optimization: O2
 * Compiler: gcc
+* Cores: 6
 
-Results:
+Results (No Parallelization):
 * (512, 512) x (512, 512)     - under 1 second
 * (1024, 1024) x (1024, 1024) - under 1 second
 * (2048, 2048) x (2048, 2048) - around 13 seconds
 * (4096, 4096) x (4096, 4096) - around 100 seconds
-* (10000, 10) x (10, 10000)   - 200+ seconds
+* (10000, 10) x (10, 10000)   - over 200 seconds
+* (10, 10000) x (10000, 10)   - under 1 second
+
+Results (Parallelization):
+* (512, 512) x (512, 512)     - under 1 second
+* (1024, 1024) x (1024, 1024) - under 1 second
+* (2048, 2048) x (2048, 2048) - around 4 seconds
+* (4096, 4096) x (4096, 4096) - around 28 seconds
+* (10000, 10) x (10, 10000)   - around 150 seconds
 * (10, 10000) x (10000, 10)   - under 1 second
