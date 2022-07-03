@@ -55,6 +55,9 @@ void mat_transpose_inplace(const Matrix* mat, Matrix** target);
 // multiply two matrices and return a new matrix with the result - careful, be sure to free your matrix before reassigning if it is non-null
 Matrix* mat_multiply(const Matrix* mat1, const Matrix* mat2);
 
+// multiply two matrices using OpenMP for multiple threads. new matrix is returned - careful, be sure to free your matrix before reassigning if it is non-null
+Matrix* mat_multiply_parallel(const Matrix* mat1, const Matrix* mat2);
+
 // multiply two matrices and store the result into target (assumes it's pre-allocated). you can use this version if you are worried about heap fragmentation (i.e., if you are doing an absurd amount of multiplications).
 void mat_multiply_inplace(const Matrix* mat1, const Matrix* mat2, Matrix** target);
 

@@ -5,8 +5,15 @@ cmake_minimum_required (VERSION 3.8)
 
 project ("CMatrix" C)
 
+option(USE_PARALLEL "Use openmp for parallelization" OFF)
+
 set(CMAKE_C_STANDARD 99)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -Wall")
+
+if (USE_PARALLEL)
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -fopenmp -Wall")
+else()
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -Wall")
+endif()
 
 # Add source to this project's executable.
 add_subdirectory(src/main)

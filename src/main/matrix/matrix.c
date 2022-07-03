@@ -197,6 +197,35 @@ static Matrix* __transpose_trick(const Matrix* mat1, const Matrix* mat2)
 	return result;
 }
 
+static Matrix* __transpose_trick_parallel(const Matrix* mat1, const Matrix* mat2)
+{
+	Matrix* result = NULL;
+	mat_init(&result, mat1->n_rows, mat2->n_columns);
+
+	Matrix* mat2_tpose = mat_transpose(mat2);
+
+	Vector* row_vec = NULL;
+	vec_init(&row_vec, mat1->n_rows);
+
+	Vector* col_vec = NULL;
+	vec_init(&col_vec, mat2_tpose->n_rows); // due to transpose, the size will be similar to row_vec
+
+	#pragma omp parallel for collapse(2)
+	for (size_t r = 0; r < result->n_rows; ++r)
+	{
+		for (size_t c = 0; c < result->n_columns; ++c)
+		{
+			mat_get_row_inplace(mat1, r, &row_vec);
+			mat_get_row_inplace(mat2_tpose, c, &col_vec);
+			mat_set(&result, r, c, mat_at(result, r, c) + vec_dot(row_vec, col_vec));
+		}
+	}
+
+	mat_free(&mat2_tpose);
+
+	return result;
+}
+
 static void __transpose_trick_inplace(const Matrix* mat1, const Matrix* mat2, Matrix** target)
 {
 	Matrix* mat2_tpose = mat_transpose(mat2);
@@ -220,6 +249,30 @@ static void __transpose_trick_inplace(const Matrix* mat1, const Matrix* mat2, Ma
 	mat_free(&mat2_tpose);
 }
 
+static void __transpose_trick_inplace_parallel(const Matrix* mat1, const Matrix* mat2, Matrix** target)
+{
+	Matrix* mat2_tpose = mat_transpose(mat2);
+
+	Vector* row_vec = NULL;
+	vec_init(&row_vec, mat1->n_rows);
+
+	Vector* col_vec = NULL;
+	vec_init(&col_vec, mat2_tpose->n_rows); // due to transpose, the size will be similar to row_vec
+
+	#pragma omp parallel for collapse(2)
+	for (size_t r = 0; r < (*target)->n_rows; ++r)
+	{
+		for (size_t c = 0; c < (*target)->n_columns; ++c)
+		{
+			mat_get_row_inplace(mat1, r, &row_vec);
+			mat_get_row_inplace(mat2_tpose, c, &col_vec);
+			mat_set(target, r, c, mat_at(*target, r, c) + vec_dot(row_vec, col_vec));
+		}
+	}
+
+	mat_free(&mat2_tpose);
+}
+
 Matrix* mat_multiply(const Matrix* mat1, const Matrix* mat2)
 {
 	if (mat1->n_columns != mat2->n_rows)
@@ -228,12 +281,28 @@ Matrix* mat_multiply(const Matrix* mat1, const Matrix* mat2)
 	return __transpose_trick(mat1, mat2);
 }
 
+Matrix* mat_multiply_parallel(const Matrix* mat1, const Matrix* mat2)
+{
+	if (mat1->n_columns != mat2->n_rows)
+		util_error("mat1's column size must match mat2's row size when multiplying matrices.");
+
+	return __transpose_trick_parallel(mat1, mat2);
+}
+
 void mat_multiply_inplace(const Matrix* mat1, const Matrix* mat2, Matrix** target)
 {
 	if (mat1->n_columns != mat2->n_rows)
 		util_error("mat1's column size must match mat2's row size when multiplying matrices.");
 
 	__transpose_trick_inplace(mat1, mat2, target);
+}
+
+void mat_multiply_inplace_parallel(const Matrix* mat1, const Matrix* mat2, Matrix** target)
+{
+	if (mat1->n_columns != mat2->n_rows)
+		util_error("mat1's column size must match mat2's row size when multiplying matrices.");
+
+	__transpose_trick_inplace_parallel(mat1, mat2, target);
 }
 
 void mat_apply(Matrix** mat, float (*apply_func)(float x, float* argv), float* argv)
