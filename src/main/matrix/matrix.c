@@ -181,7 +181,7 @@ static Matrix* __transpose_trick(const Matrix* mat1, const Matrix* mat2)
 	{
 		for (size_t c = 0; c < result->n_columns; ++c)
 		{
-			for (size_t k = 0; k < result->n_columns; ++k)
+			for (size_t k = 0; k < mat2_tpose->n_columns; ++k)
 			{
 				mat_set(&result, r, c, mat_at(result, r, c) + mat_at(mat1, r, k) * mat_at(mat2_tpose, c, k));
 			}
@@ -206,7 +206,7 @@ static Matrix* __transpose_trick_parallel(const Matrix* mat1, const Matrix* mat2
 	{
 		for (size_t c = 0; c < result->n_columns; ++c)
 		{
-			for (size_t k = 0; k < result->n_columns; ++k)
+			for (size_t k = 0; k < mat2_tpose->n_columns; ++k)
 			{
 				mat_set(&result, r, c, mat_at(result, r, c) + mat_at(mat1, r, k) * mat_at(mat2_tpose, c, k));
 			}
@@ -232,7 +232,7 @@ static void __transpose_trick_inplace(const Matrix* mat1, const Matrix* mat2, Ma
 	{
 		for (size_t c = 0; c < (*target)->n_columns; ++c)
 		{
-			for (size_t k = 0; k < (*target)->n_columns; ++k)
+			for (size_t k = 0; k < mat2_tpose->n_columns; ++k)
 			{
 				mat_set(target, r, c, mat_at(*target, r, c) + mat_at(mat1, r, k) * mat_at(mat2_tpose, c, k));
 			}
@@ -252,18 +252,20 @@ static void __transpose_trick_inplace_parallel(const Matrix* mat1, const Matrix*
 	Vector* col_vec = NULL;
 	vec_init(&col_vec, mat2_tpose->n_rows); // due to transpose, the size will be similar to row_vec
 
-	#pragma omp parallel for collapse(2)
+	#pragma omp parallel for collapse(3)
 	for (size_t r = 0; r < (*target)->n_rows; ++r)
 	{
 		for (size_t c = 0; c < (*target)->n_columns; ++c)
 		{
-			mat_get_row_inplace(mat1, r, &row_vec);
-			mat_get_row_inplace(mat2_tpose, c, &col_vec);
-			mat_set(target, r, c, mat_at(*target, r, c) + vec_dot(row_vec, col_vec));
+			for (size_t k = 0; k < mat2_tpose->n_columns; ++k)
+			{
+				mat_set(target, r, c, mat_at(*target, r, c) + mat_at(mat1, r, k) * mat_at(mat2_tpose, c, k));
+			}
 		}
 	}
 
 	mat_free(&mat2_tpose);
+
 }
 
 Matrix* mat_multiply(const Matrix* mat1, const Matrix* mat2)
