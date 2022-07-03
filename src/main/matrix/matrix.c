@@ -176,19 +176,15 @@ static Matrix* __transpose_trick(const Matrix* mat1, const Matrix* mat2)
 
 	Matrix* mat2_tpose = mat_transpose(mat2);
 
-	Vector* row_vec = NULL;
-	vec_init(&row_vec, mat1->n_rows);
-
-	Vector* col_vec = NULL;
-	vec_init(&col_vec, mat2_tpose->n_rows); // due to transpose, the size will be similar to row_vec
-
+	// OpenMP can utilize this loop structure better than calling get_row functions which introduce too much data dependency
 	for (size_t r = 0; r < result->n_rows; ++r)
 	{
 		for (size_t c = 0; c < result->n_columns; ++c)
 		{
-			mat_get_row_inplace(mat1, r, &row_vec);
-			mat_get_row_inplace(mat2_tpose, c, &col_vec);
-			mat_set(&result, r, c, mat_at(result, r, c) + vec_dot(row_vec, col_vec));
+			for (size_t k = 0; k < result->n_columns; ++k)
+			{
+				mat_set(&result, r, c, mat_at(result, r, c) + mat_at(mat1, r, k) * mat_at(mat2_tpose, c, k));
+			}
 		}
 	}
 
@@ -204,20 +200,16 @@ static Matrix* __transpose_trick_parallel(const Matrix* mat1, const Matrix* mat2
 
 	Matrix* mat2_tpose = mat_transpose(mat2);
 
-	Vector* row_vec = NULL;
-	vec_init(&row_vec, mat1->n_rows);
-
-	Vector* col_vec = NULL;
-	vec_init(&col_vec, mat2_tpose->n_rows); // due to transpose, the size will be similar to row_vec
-
-	#pragma omp parallel for collapse(2)
+	// OpenMP can utilize this loop structure better than calling get_row functions which introduce too much data dependency
+	#pragma omp parallel for collapse(3)
 	for (size_t r = 0; r < result->n_rows; ++r)
 	{
 		for (size_t c = 0; c < result->n_columns; ++c)
 		{
-			mat_get_row_inplace(mat1, r, &row_vec);
-			mat_get_row_inplace(mat2_tpose, c, &col_vec);
-			mat_set(&result, r, c, mat_at(result, r, c) + vec_dot(row_vec, col_vec));
+			for (size_t k = 0; k < result->n_columns; ++k)
+			{
+				mat_set(&result, r, c, mat_at(result, r, c) + mat_at(mat1, r, k) * mat_at(mat2_tpose, c, k));
+			}
 		}
 	}
 
@@ -240,9 +232,10 @@ static void __transpose_trick_inplace(const Matrix* mat1, const Matrix* mat2, Ma
 	{
 		for (size_t c = 0; c < (*target)->n_columns; ++c)
 		{
-			mat_get_row_inplace(mat1, r, &row_vec);
-			mat_get_row_inplace(mat2_tpose, c, &col_vec);
-			mat_set(target, r, c, mat_at(*target, r, c) + vec_dot(row_vec, col_vec));
+			for (size_t k = 0; k < (*target)->n_columns; ++k)
+			{
+				mat_set(target, r, c, mat_at(*target, r, c) + mat_at(mat1, r, k) * mat_at(mat2_tpose, c, k));
+			}
 		}
 	}
 

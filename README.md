@@ -47,17 +47,19 @@ Specs:
 * Cores: 6
 
 Results (No Parallelization):
-* (512, 512) x (512, 512)     - under 1 second
-* (1024, 1024) x (1024, 1024) - under 1 second
-* (2048, 2048) x (2048, 2048) - around 13 seconds
-* (4096, 4096) x (4096, 4096) - around 100 seconds
-* (10000, 10) x (10, 10000)   - over 200 seconds
+* (512, 512) x (512, 512)     - around 1 second
+* (1024, 1024) x (1024, 1024) - around 2 seconds
+* (2048, 2048) x (2048, 2048) - around 10 seconds
+* (4096, 4096) x (4096, 4096) - around 75 seconds
+* (10000, 10) x (10, 10000)   - around 2 seconds
 * (10, 10000) x (10000, 10)   - under 1 second
 
 Results (Parallelization):
 * (512, 512) x (512, 512)     - under 1 second
 * (1024, 1024) x (1024, 1024) - under 1 second
-* (2048, 2048) x (2048, 2048) - around 4 seconds
-* (4096, 4096) x (4096, 4096) - around 28 seconds
-* (10000, 10) x (10, 10000)   - around 150 seconds
+* (2048, 2048) x (2048, 2048) - under 1 second
+* (4096, 4096) x (4096, 4096) - around 2 seconds
+* (10000, 10) x (10, 10000)   - around 2 seconds
 * (10, 10000) x (10000, 10)   - under 1 second
+
+Seems that with parallelization (and up to 6 cores) our scenarios are (almost) \<= 1 second.
