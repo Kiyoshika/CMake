@@ -1,4 +1,4 @@
-set(ROOT_INCLUDE ${CMAKE_SOURCE_DIR}/include)
+set(ROOT_INCLUDE ${CMatrix_SOURCE_DIR}/include)
 
 add_library(util util/util.c)
 target_include_directories(util PUBLIC ${ROOT_INCLUDE}/util)
