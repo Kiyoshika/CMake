@@ -28,6 +28,9 @@ Matrix* mat_create(const float* data, const size_t n_rows, const size_t n_colums
 // generate random values for matrix
 void mat_random(Matrix** mat, const float lower_bound, const float upper_bound);
 
+// fill matrix with a value
+void mat_fill(Matrix** mat, const float value);
+
 // return matrix value at index (r, c)
 float mat_at(const Matrix* mat, const size_t r, const size_t c);
 
