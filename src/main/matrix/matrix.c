@@ -60,6 +60,12 @@ void mat_random(Matrix** mat, const float lower_bound, const float upper_bound)
 			(*mat)->data[compute_offset(r, c, (*mat)->n_columns)] = util_rand_between(lower_bound, upper_bound);
 }
 
+void mat_fill(Matrix** mat, const float value)
+{
+	for (size_t i = 0; i < (*mat)->n_rows * (*mat)->n_columns; ++i)
+		(*mat)->data[i] = value;
+}
+
 float mat_at(const Matrix* mat, const size_t r, const size_t c)
 {
 	return mat->data[compute_offset(r, c, mat->n_columns)];
@@ -220,6 +226,9 @@ static Matrix* __transpose_trick_parallel(const Matrix* mat1, const Matrix* mat2
 
 static void __transpose_trick_inplace(const Matrix* mat1, const Matrix* mat2, Matrix** target)
 {
+	// reset target to 0 incase user calls this multiple times (this caused a bug in my Perceptron...)
+	mat_fill(target, 0.0f);
+
 	Matrix* mat2_tpose = mat_transpose(mat2);
 
 	Vector* row_vec = NULL;
@@ -244,6 +253,9 @@ static void __transpose_trick_inplace(const Matrix* mat1, const Matrix* mat2, Ma
 
 static void __transpose_trick_inplace_parallel(const Matrix* mat1, const Matrix* mat2, Matrix** target)
 {
+	// reset target to 0 incase user calls this multiple times (this caused a bug in my Perceptron...)
+	mat_fill(target, 0.0f);
+
 	Matrix* mat2_tpose = mat_transpose(mat2);
 
 	Vector* row_vec = NULL;
