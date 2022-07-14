@@ -33,6 +33,8 @@ include a `add_subdirectory(path/to/CMatrix)` which will include CMatrix as part
 
 Then in your pieces of code that depend on it, you can use `target_link_libraries([your target] matrix)`
 
+If it can't find the headers even after linking, you can use `target_include_directories([your target] PUBLIC ${CMatrix_SOURCE_DIR}/include/matrix)`
+
 If you don't use CMake, you can build from source (above section) and manually link the static library.
 
 # Benchmarks
