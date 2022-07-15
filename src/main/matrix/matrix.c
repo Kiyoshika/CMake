@@ -231,12 +231,6 @@ static void __transpose_trick_inplace(const Matrix* mat1, const Matrix* mat2, Ma
 
 	Matrix* mat2_tpose = mat_transpose(mat2);
 
-	Vector* row_vec = NULL;
-	vec_init(&row_vec, mat1->n_rows);
-
-	Vector* col_vec = NULL;
-	vec_init(&col_vec, mat2_tpose->n_rows); // due to transpose, the size will be similar to row_vec
-
 	for (size_t r = 0; r < (*target)->n_rows; ++r)
 	{
 		for (size_t c = 0; c < (*target)->n_columns; ++c)
