@@ -30,6 +30,8 @@ void mat_reshape(Matrix** mat, const size_t r, const size_t c)
 	void* d_alloc = calloc(r * c, sizeof(float));
 	if (!d_alloc)
 		util_error("Couldn't allocate enough memory when trying to reshape Matrix.");
+
+	free((*mat)->data); // dealloc old memory before reassigning
 	(*mat)->data = d_alloc;
 }
 
