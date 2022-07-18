@@ -10,3 +10,8 @@ target_link_libraries(vector util)
 add_library(matrix matrix/matrix.c)
 target_include_directories(matrix PUBLIC ${ROOT_INCLUDE}/matrix)
 target_link_libraries(matrix util vector)
+
+# KEEPING FOR CONVENIENCE
+#add_executable(testing testing.c)
+#target_include_directories(testing PUBLIC ${ROOT_INCLUDE})
+#target_link_libraries(testing matrix util vector)

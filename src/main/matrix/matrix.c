@@ -497,3 +497,84 @@ void mat_free(Matrix** mat)
 	free(*mat);
 	*mat = NULL;
 }
+
+Matrix* mat_filter(
+		const Matrix* mat,
+		bool (*predicate)(const Vector*, float*),
+		float* predicate_args,
+		size_t** filtered_idx)
+{
+	// we don't know ahead of time how many
+	// rows will match the predicate, so first
+	// we allocate a temp matrix the same size as the original
+	// and every time the predicate matches, we copy the
+	// contents of the vector into the temp matrix.
+	// once the filtering is done, we create yet another
+	// new matrix of the correct size and copy the contents
+	// from the temp matrix into the new one.
+	// I was unable to think of a clever trick at the time
+	// to avoid wasting memory so this will do for now.
+	//
+	// WARNING: filter_idx is sized to n_rows as (again) we
+	// don't know ahead of time how many rows match the
+	// predicate. you can use the n_rows member of the
+	// filtered matrix to pull correct indices. everything
+	// after will be 0.
+	
+	Vector* current_row = NULL;
+	vec_init(&current_row, mat->n_columns);
+
+	Matrix* predicate_match = NULL;
+	mat_init(&predicate_match, mat->n_rows, mat->n_columns);
+
+	size_t filtered_rows = 0;
+	if (*filtered_idx != NULL)
+		free(*filtered_idx);
+	void* alloc = calloc(mat->n_rows, sizeof(size_t));
+	if (!alloc)
+		util_error("Couldn't allocate memory while filtering matrix.");
+	*filtered_idx = alloc;
+
+	for (size_t r = 0; r < mat->n_rows; ++r)
+	{
+		mat_get_row_inplace(mat, r, &current_row);
+		if (predicate(current_row, predicate_args))
+		{
+			(*filtered_idx)[filtered_rows] = r;
+
+			// if predicate matches, copy contents
+			// into temporary predicate_match matrix
+			for (size_t c = 0; c < mat->n_columns; ++c)
+				mat_set(&predicate_match, filtered_rows, c, vec_at(current_row, c));
+
+			filtered_rows++;
+		}
+	}
+
+	// after filtering, store results into correctly-sized matrix,
+	// free the temp one and return
+	
+	Matrix* filtered = NULL;
+	mat_init(&filtered, filtered_rows, mat->n_columns);
+	for (size_t r = 0; r < filtered_rows; ++r)
+		for (size_t c = 0; c < mat->n_columns; ++c)
+			mat_set(&filtered, r, c, mat_at(predicate_match, r, c));
+	mat_free(&predicate_match);
+	vec_free(&current_row);
+
+	return filtered;
+}
+
+Matrix* mat_subset_idx(
+		const Matrix* mat,
+		const size_t* sample_idx,
+		const size_t n_samples)
+{
+	Matrix* sampled = NULL;
+	mat_init(&sampled, n_samples, mat->n_columns);
+	for (size_t r = 0; r < n_samples; ++r)
+		for (size_t c = 0; c < mat->n_columns; ++c)
+			mat_set(&sampled, r, c, mat_at(mat, sample_idx[r], c));
+
+	return sampled;
+}

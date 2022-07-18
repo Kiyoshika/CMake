@@ -112,4 +112,19 @@ Matrix* mat_sample(const Matrix* mat, const size_t n_samples, bool with_replacem
 // free memory allocated by matrix
 void mat_free(Matrix** mat);
 
+// filter matrix based on a predicate. For the predicate, the first argument is a vector representing the current row of the matrix - you can use this to filter on specific columns by using the corresponding indices in the vector (i.e., vec[0] refers to column 0, etc.) 
+// Second parameter is a pointer to any additional values you want to pass to predicate
+// (via array). If no additional values, you can pass NULL. This will return a newly-allocate matrix
+// with the filtered rows and also store the filtered indices into filtered_idx. WARNING: filtered_idx
+// will be free'd and reallocated based on the # of rows that match predicate. It's advised to pass
+// a NULL pointer to filtered_idx and free it manually when you're done
+Matrix* mat_filter(const Matrix* mat, bool (*predicate)(const Vector*, float*), float* predicate_args, size_t** filtered_idx);
+
+// a variation of mat_subset where you specify the exact indices to sample from.
+// this will return a newly-allocated matrix with the sampled rows.
+// sampled_idx is an array of size_t specifying the indices to sample.
+// this works well with mat_filter if you are doing paired-filtering
+// (i.e., filtering two matrices at the same time)
+Matrix* mat_subset_idx(const Matrix* mat, const size_t* sample_idx, const size_t n_samples);
+
 #endif
