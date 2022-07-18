@@ -10,9 +10,9 @@ option(USE_PARALLEL "Use openmp for parallelization" OFF)
 set(CMAKE_C_STANDARD 99)
 
 if (USE_PARALLEL)
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -fopenmp -Wall")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -fopenmp -Wall -g")
 else()
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -Wall")
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -Wall -g")
 endif()
 
 # Add source to this project's executable.
