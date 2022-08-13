@@ -574,3 +574,39 @@ Matrix* mat_subset_idx(
 
 	return sampled;
 }
+
+void __swap_rows(Matrix** mat, size_t r1, size_t r2)
+{
+	Vector* r1_vec = mat_get_row(*mat, r1);
+	for (size_t c = 0; c < (*mat)->n_columns; ++c)
+	{
+		mat_set(mat, r1, c, mat_at(*mat, r2, c));
+		mat_set(mat, r2, c, vec_at(r1_vec, c));
+	}
+	vec_free(&r1_vec);
+}
+
+void __mat_sort(Matrix** mat, size_t c, size_t left_idx, size_t right_idx, bool ascending)
+{
+	if (left_idx >= right_idx)
+		return;
+
+	float pivot = mat_at(*mat, right_idx, c);
+	size_t iter = left_idx;
+	for (size_t i = left_idx; i < right_idx; ++i)
+	{
+		if ((ascending && mat_at(*mat, i, c) < pivot)
+			|| (!ascending && mat_at(*mat, i, c) > pivot))
+			__swap_rows(mat, i, iter++);
+	}
+	__swap_rows(mat, iter, right_idx); // swap pivot to correct position
+
+	if (iter > 0) // prevent underflow
+		__mat_sort(mat, c, left_idx, iter - 1, ascending);
+	__mat_sort(mat, c, iter + 1, right_idx, ascending);
+}
+
+void mat_sort(Matrix** mat, size_t c, bool ascending)
+{
+	__mat_sort(mat, c, 0, (*mat)->n_rows - 1, ascending);
+}
