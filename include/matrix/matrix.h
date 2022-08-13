@@ -127,4 +127,7 @@ Matrix* mat_filter(const Matrix* mat, bool (*predicate)(const Vector*, float*), 
 // (i.e., filtering two matrices at the same time)
 Matrix* mat_subset_idx(const Matrix* mat, const size_t* sample_idx, const size_t n_samples);
 
+// Sort matrix inplace in column c
+void mat_sort(Matrix** mat, size_t c, bool ascending);
+
 #endif
